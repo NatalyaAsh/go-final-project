@@ -22,8 +22,9 @@ require (
 	modernc.org/libc v1.62.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.9.1 // indirect
+//modernc.org/sqlite v1.2.3
 )
 
 replace go1f => ./
 
-require go1f v0.0.0 
+require go1f v0.0.0
