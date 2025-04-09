@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+
+	"main.go/pkg/api"
 )
 
 // func getRoot(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +32,9 @@ func Start() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
-	mux.HandleFunc("GET /hello/{name}", getHello)
+	//mux.HandleFunc("GET /hello/{name}", getHello)
+
+	api.Init(mux)
 
 	slog.Info("Started", "Port", port)
 	err := http.ListenAndServe(":"+port, mux)
