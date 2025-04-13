@@ -11,11 +11,9 @@ import (
 )
 
 func nextDayHandler(w http.ResponseWriter, r *http.Request) {
-
 	now := r.URL.Query().Get("now")
 	date := r.URL.Query().Get("date")
 	repeat := r.URL.Query().Get("repeat")
-	slog.Info("Resive:", "now", now, "date", date, "repeat", repeat)
 	tNow, err := time.Parse(DateFormat, now)
 	if err != nil {
 		tNow = time.Now()
@@ -24,7 +22,6 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	slog.Info("Send:", "resDate", resDate)
 	msg := fmt.Sprintf("%s\n", resDate)
 	io.WriteString(w, msg)
 }
@@ -231,4 +228,43 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 
 func afterNow(date, now time.Time) bool {
 	return date.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+}
+
+func checkRepeat(repeat string) (bool, string) {
+	if repeat == "" {
+		return true, ""
+	}
+	sRepeat := strings.Split(repeat, " ")
+	lenRepeat := len(sRepeat)
+	if lenRepeat >= 1 {
+		switch sRepeat[0] {
+		case "y":
+			if lenRepeat > 1 {
+				return false, "wrong format Repeat"
+			} else {
+				return true, ""
+			}
+		case "d":
+			if lenRepeat != 2 {
+				return false, "wrong format Repeat"
+			} else {
+				return true, ""
+			}
+		case "m":
+			if lenRepeat == 1 || lenRepeat > 3 {
+				return false, "wrong format Repeat"
+			} else {
+				return true, ""
+			}
+		case "w":
+			if lenRepeat != 2 {
+				return false, "wrong format Repeat"
+			} else {
+				return true, ""
+			}
+		default:
+			return false, "wrong format Repeat"
+		}
+	}
+	return true, ""
 }
