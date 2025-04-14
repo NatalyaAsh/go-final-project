@@ -9,8 +9,9 @@ const DateFormat = "20060102"
 func Init(mux *http.ServeMux) {
 	mux.HandleFunc("/api/nextdate", nextDayHandler)
 	mux.HandleFunc("POST /api/task", addTaskHandler)
-	mux.HandleFunc("GET /api/task", getTaskHandler)
 	mux.HandleFunc("GET /api/tasks", TasksHandler)
+	mux.HandleFunc("GET /api/task", getTaskHandler)
+	mux.HandleFunc("PUT /api/task", updateTaskHandler)
 }
 
 // func taskHandler(w http.ResponseWriter, r *http.Request) {
