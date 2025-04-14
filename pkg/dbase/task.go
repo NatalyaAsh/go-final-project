@@ -2,9 +2,11 @@ package dbase
 
 import (
 	"database/sql"
-	"fmt"
 	"log/slog"
+	"time"
 )
+
+const LIMIT = 50
 
 func AddTask(task *Task) (int64, error) {
 	var id int64
@@ -25,27 +27,90 @@ func AddTask(task *Task) (int64, error) {
 		slog.Error("Result LastInsertId", "err", err)
 		return 0, err
 	}
+	//SelectTask()
 	return id, nil
 }
 
-func SelectTask() {
-	slog.Info("Select * from scheduler:")
-
-	rows, err := db.Query("SELECT id, date, title, comment, repeat FROM scheduler")
+func SelectTask() ([]Task, error) {
+	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler
+	ORDER BY date LIMIT :limit`, sql.Named("limit", LIMIT))
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 	defer rows.Close()
 
-	var id, date, title, comment, repeat string
+	arrTasks := []Task{}
 	for rows.Next() {
-		err := rows.Scan(&id, &date, &title, &comment, &repeat)
+		var task Task
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
+			return []Task{}, err
 		}
-		fmt.Println(id, date, title, comment, repeat)
+		//slog.Info("Select row:", "task", task)
+		arrTasks = append(arrTasks, task)
 	}
 	if err = rows.Err(); err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
+		return []Task{}, err
 	}
+	//slog.Info("", "arrTasks", arrTasks)
+	return arrTasks, nil
+}
+
+func GetTaskTitle(search string) ([]Task, error) {
+	searchStr := "%" + search + "%"
+	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler 
+	WHERE title LIKE :search OR comment LIKE :search ORDER BY date LIMIT :limit`,
+		sql.Named("search", searchStr), sql.Named("limit", LIMIT))
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	defer rows.Close()
+
+	arrTasks := []Task{}
+	for rows.Next() {
+		var task Task
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		if err != nil {
+			slog.Error(err.Error())
+			return []Task{}, err
+		}
+		//slog.Info("Select row:", "task", task)
+		arrTasks = append(arrTasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		slog.Error(err.Error())
+		return []Task{}, err
+	}
+	//slog.Info("", "arrTasks", arrTasks)
+	return arrTasks, nil
+}
+
+func GetTaskDate(date time.Time) ([]Task, error) {
+	dateStr := date.Format("20060102")
+	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler
+	WHERE date=:date ORDER BY date LIMIT :limit`, sql.Named("date", dateStr), sql.Named("limit", LIMIT))
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	defer rows.Close()
+
+	arrTasks := []Task{}
+	for rows.Next() {
+		var task Task
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		if err != nil {
+			slog.Error(err.Error())
+			return []Task{}, err
+		}
+		//slog.Info("Select row:", "task", task)
+		arrTasks = append(arrTasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		slog.Error(err.Error())
+		return []Task{}, err
+	}
+	//slog.Info("", "arrTasks", arrTasks)
+	return arrTasks, nil
 }

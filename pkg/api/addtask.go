@@ -39,7 +39,7 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Recive: ", "task", task)
+	//slog.Info("Recive: ", "task", task)
 	ok, msgErr := checkTask(&task)
 	if !ok {
 		responseErr.Error = msgErr
@@ -53,13 +53,16 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		responseErr.Error = "task title not specified"
+		msg, _ := json.Marshal(responseErr)
+		io.Writer.Write(w, msg)
 		slog.Error("Result query", "err", err)
+		return
 	} else {
 		responseId.ID = id
-		slog.Info("Result query", "id", id)
+		slog.Info("", "INSERT ", task, "id", id)
 	}
 	msg, _ := json.Marshal(responseId)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	//w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	io.Writer.Write(w, msg)
 }
 
@@ -84,18 +87,28 @@ func checkTask(task *dbase.Task) (bool, string) {
 	}
 
 	if !afterNow(date, time.Now()) {
-		slog.Info("Date < Now ->")
+		//slog.Info("Date < Now ->")
 		if task.Repeat == "" {
 			task.Date = time.Now().Format(DateFormat)
-			slog.Info("Repeat Empty", "Date", task.Date)
+			//slog.Info("Repeat Empty", "Date", task.Date)
 		} else {
 			nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
 			if err == nil {
 				task.Date = nextDate
-				slog.Info("Repeat Exist", "nextDate", task.Date)
+				//slog.Info("Repeat Exist", "nextDate", task.Date)
 			}
 		}
 	}
 
 	return true, ""
 }
+
+// func writeJson(w http.ResponseWriter, data any) {
+// 	msg, _ := json.Marshal(data)
+// 	io.Writer.Write(w, msg)
+
+// }
+
+// writeJson(w, TasksResp{
+// 	Tasks: tasks,
+// })
