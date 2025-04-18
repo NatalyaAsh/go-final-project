@@ -56,3 +56,26 @@ func UpdateTask(task *Task) error {
 	slog.Info("Update", "task", task, "count", count)
 	return nil
 }
+
+func DeleteTask(id string) error {
+	_, err := strconv.Atoi(id)
+	if err != nil {
+		slog.Error(err.Error())
+		return fmt.Errorf("неверно указан идентификатор")
+	}
+
+	res, err := db.Exec(`DELETE FROM scheduler WHERE id=:id`, sql.Named("id", id))
+	if err != nil {
+		slog.Error(err.Error())
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		slog.Error(err.Error())
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf(`incorrect id for updating task`)
+	}
+	return nil
+}

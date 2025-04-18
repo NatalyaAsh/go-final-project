@@ -20,7 +20,7 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resDate, err := NextDate(tNow, date, repeat)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error(err.Error(), "func", nextDayHandler)
 	}
 	msg := fmt.Sprintf("%s\n", resDate)
 	io.WriteString(w, msg)
@@ -28,11 +28,11 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	if dstart == "" {
-		slog.Error("wrong format", "date", dstart)
+		slog.Error("NextDate: wrong format", "date", dstart)
 		return "", nil
 	}
 	if repeat == "" {
-		slog.Error("Wrong format", "repeat", repeat)
+		slog.Error("NextDate: Wrong format", "repeat", repeat)
 		return "", nil
 	}
 	date, err := time.Parse(DateFormat, dstart)
@@ -56,16 +56,16 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		// через N дней
 		case "d":
 			if len(sRepeat) == 1 {
-				slog.Error("Wrong number of days:", "repeat", repeat)
+				slog.Error("NextDate: Wrong number of days:", "repeat", repeat)
 				return "", nil
 			}
 			days, err := strconv.Atoi(sRepeat[1])
 			if err != nil {
-				slog.Error("Not integer")
+				slog.Error("NextDate: Not integer")
 				return "", nil
 			}
 			if days <= 0 || days > 31 {
-				slog.Error("Wrong day")
+				slog.Error("NextDate: Wrong day")
 				return "", nil
 			}
 
@@ -81,7 +81,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			var resDate, nextDate time.Time
 			switch len(sRepeat) {
 			case 1:
-				slog.Error("Wrong number of month days:", "repeat", repeat)
+				slog.Error("NextDate: Wrong number of month days:", "repeat", repeat)
 				return "", nil
 			//  Заданы только дни
 			case 2:
@@ -90,11 +90,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				for _, day := range arrDay {
 					nDay, err := strconv.Atoi(day)
 					if err != nil {
-						slog.Error("Not integer", "day at repeat", day)
+						slog.Error("NextDate: Not integer", "day at repeat", day)
 						return "", nil
 					}
 					if nDay == 0 || nDay > 31 || nDay < -2 {
-						slog.Error("Wrong day", "day at repeat", nDay)
+						slog.Error("NextDate: Wrong day", "day at repeat", nDay)
 						return "", nil
 					}
 					nextDate = date
@@ -135,16 +135,16 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 					for _, month := range arrMonth {
 						nDay, err := strconv.Atoi(day)
 						if err != nil {
-							slog.Error("Not integer")
+							slog.Error("NextDate: Not integer")
 							return "", nil
 						}
 						nMonth, err := strconv.Atoi(month)
 						if err != nil {
-							slog.Error("Not integer")
+							slog.Error("NextDate: Not integer")
 							return "", nil
 						}
 						if nDay == 0 || nMonth <= 0 || nDay > 31 || nMonth > 12 || nDay < -2 {
-							slog.Error("Wrong value day or month")
+							slog.Error("NextDate: Wrong value day or month")
 							return "", nil
 						}
 						nextDate = date
@@ -176,14 +176,14 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 				return resDate.Format(DateFormat), nil
 
 			default:
-				slog.Error("Wrong number of month days:", "repeat", repeat)
+				slog.Error("NextDate: Wrong number of month days:", "repeat", repeat)
 				return "", nil
 			}
 
 		// заданы дни недели
 		case "w":
 			if len(sRepeat) == 1 {
-				slog.Error("Wrong number of weekdays:", "repeat", repeat)
+				slog.Error("NextDate: Wrong number of weekdays:", "repeat", repeat)
 				return "", nil
 			}
 			var resDate, nextDate time.Time
@@ -192,11 +192,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			for _, day := range arrDay {
 				nDay, err := strconv.Atoi(day)
 				if err != nil {
-					slog.Error("Not integer")
+					slog.Error("NextDate: Not integer")
 					return "", nil
 				}
 				if nDay <= 0 || nDay > 7 {
-					slog.Error("Wrong weekday")
+					slog.Error("NextDate: Wrong weekday")
 					return "", nil
 				}
 				nextDate = time.Date(date.Year(), date.Month(), date.Day()+((7+nDay-int(date.Weekday()))%7), 0, 0, 0, 0, date.Location())
@@ -217,11 +217,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 			return resDate.Format(DateFormat), nil
 
 		default:
-			slog.Error("Wrong format Repeat")
+			slog.Error("NextDate: Wrong format Repeat")
 			return "", nil
 		}
 	} else {
-		slog.Error("Wrong format Repeat")
+		slog.Error("NextDate: Wrong format Repeat")
 		return "", nil
 	}
 }

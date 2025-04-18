@@ -21,49 +21,35 @@ type ResponseErr struct {
 
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task dbase.Task
-	var responseId ResponseId
-	var responseErr ResponseErr
-
 	var buf bytes.Buffer
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: "ошибка передачи данных"})
 		return
 	}
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		responseErr.Error = "ошибка десериализации JSON"
-		msg, _ := json.Marshal(responseErr)
-		io.Writer.Write(w, msg)
+		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"})
 		return
 	}
 
-	//slog.Info("Recive: ", "task", task)
 	ok, msgErr := checkTask(&task)
 	if !ok {
-		responseErr.Error = msgErr
-		msg, _ := json.Marshal(responseErr)
-		io.Writer.Write(w, msg)
-		slog.Error(responseErr.Error)
+		writeJson(w, ResponseErr{Error: msgErr})
+		slog.Error("addTaskHandler:", "checkTask", msgErr)
 		return
-
 	}
 	id, err := dbase.AddTask(&task)
 
 	if err != nil {
-		responseErr.Error = "task title not specified"
-		msg, _ := json.Marshal(responseErr)
-		io.Writer.Write(w, msg)
-		slog.Error("Result query", "err", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: err.Error()})
 		return
-	} else {
-		responseId.ID = id
-		slog.Info("", "INSERT ", task, "id", id)
 	}
-	msg, _ := json.Marshal(responseId)
-	//w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	io.Writer.Write(w, msg)
+	slog.Info("", "INSERT ", task, "id", id)
+	writeJson(w, ResponseId{ID: id})
 }
 
 func checkTask(task *dbase.Task) (bool, string) {
@@ -77,7 +63,6 @@ func checkTask(task *dbase.Task) (bool, string) {
 
 	date, err := time.Parse(DateFormat, task.Date)
 	if err != nil {
-		slog.Error("Wrog Date format", "Было Date", task.Date)
 		return false, "wrog Date format"
 	}
 
@@ -87,28 +72,20 @@ func checkTask(task *dbase.Task) (bool, string) {
 	}
 
 	if !afterNow(date, time.Now()) {
-		//slog.Info("Date < Now ->")
 		if task.Repeat == "" {
 			task.Date = time.Now().Format(DateFormat)
-			//slog.Info("Repeat Empty", "Date", task.Date)
 		} else {
 			nextDate, err := NextDate(time.Now(), task.Date, task.Repeat)
 			if err == nil {
 				task.Date = nextDate
-				//slog.Info("Repeat Exist", "nextDate", task.Date)
 			}
 		}
 	}
-
 	return true, ""
 }
 
-// func writeJson(w http.ResponseWriter, data any) {
-// 	msg, _ := json.Marshal(data)
-// 	io.Writer.Write(w, msg)
-
-// }
-
-// writeJson(w, TasksResp{
-// 	Tasks: tasks,
-// })
+func writeJson(w http.ResponseWriter, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	msg, _ := json.Marshal(data)
+	io.Writer.Write(w, msg)
+}

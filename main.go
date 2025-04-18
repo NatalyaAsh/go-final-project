@@ -4,8 +4,7 @@ import (
 	_ "database/sql"
 	"go1f/pkg/dbase"
 
-	"go1f/pkg/server"
-
+	"main.go/pkg/server"
 	_ "modernc.org/sqlite"
 )
 
@@ -15,6 +14,7 @@ func main() {
 		return
 	}
 	defer dbase.CloseDB()
+
 	server.Start()
 
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -24,128 +23,69 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		date, notDate := time.Parse("02.01.2006", search)
 		if notDate != nil {
-			slog.Info("GetTaskTitle", "search", search)
+			slog.Info("TasksHandler: GetTaskTitle", "search", search)
 			tasks, err = dbase.GetTaskTitle(search)
 		} else {
-			slog.Info("GetTaskDate", "date", date)
+			slog.Info("TasksHandler: GetTaskDate", "date", date)
 			tasks, err = dbase.GetTaskDate(date)
 		}
 	}
 	if err != nil {
-		slog.Error(err.Error())
-		var resErr ResponseErr
-		resErr.Error = err.Error()
-		msg, err := json.Marshal(resErr)
-		if err != nil {
-			return
-		}
-		io.Writer.Write(w, msg)
+		slog.Error("TasksHandler:", "", err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: err.Error()})
 		return
 	}
-	//slog.Info("Select", "tasks", tasks)
-	var tasksResp TasksResp
-	tasksResp.Tasks = tasks
-	msg, err := json.Marshal(tasksResp)
-	if err != nil {
-		return
-	}
-	io.Writer.Write(w, msg)
+	writeJson(w, TasksResp{Tasks: tasks})
 }
 
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	if id != "" {
-		task, err := dbase.GetTask(id)
-		if err != nil {
-			slog.Error(err.Error())
-			var resErr ResponseErr
-			resErr.Error = err.Error()
-			msg, err := json.Marshal(resErr)
-			if err != nil {
-				return
-			}
-			io.Writer.Write(w, msg)
-			return
-		}
-		msg, err := json.Marshal(task)
-		if err != nil {
-			return
-		}
-		io.Writer.Write(w, msg)
-		return
-
-	} else {
-		slog.Error("Не указан идентификатор")
-		var resErr ResponseErr
-		resErr.Error = "не указан идентификатор"
-		msg, err := json.Marshal(resErr)
-		if err != nil {
-			return
-		}
-		io.Writer.Write(w, msg)
+	if id == "" {
+		slog.Error("getTaskHandler: Не указан идентификатор")
+		writeJson(w, ResponseErr{Error: "не указан идентификатор"})
 		return
 	}
-
+	task, err := dbase.GetTask(id)
+	if err != nil {
+		slog.Error("getTaskHandler:", "", err.Error())
+		writeJson(w, ResponseErr{Error: err.Error()})
+		return
+	}
+	writeJson(w, task)
 }
 
 func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task dbase.Task
-	//var responseId ResponseId
-	var responseErr ResponseErr
-
 	var buf bytes.Buffer
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: err.Error()})
 		return
 	}
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		responseErr.Error = "ошибка десериализации JSON"
-		msg, _ := json.Marshal(responseErr)
-		io.Writer.Write(w, msg)
+		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"})
 		return
 	}
 	ok, msgErr := checkTask(&task)
 	if !ok {
-		responseErr.Error = msgErr
-		msg, _ := json.Marshal(responseErr)
-		io.Writer.Write(w, msg)
-		slog.Error(responseErr.Error)
+		writeJson(w, ResponseErr{Error: msgErr})
 		return
 	}
 
-	if task.ID != "" {
-		err := dbase.UpdateTask(&task)
-		if err != nil {
-			slog.Error(err.Error())
-			var resErr ResponseErr
-			resErr.Error = err.Error()
-			msg, err := json.Marshal(resErr)
-			if err != nil {
-				return
-			}
-			io.Writer.Write(w, msg)
-			return
-		}
-		msg, err := json.Marshal(task)
-		if err != nil {
-			return
-		}
-		io.Writer.Write(w, msg)
-		return
-
-	} else {
-		slog.Error("Не указан идентификатор")
-		var resErr ResponseErr
-		resErr.Error = "не указан идентификатор"
-		msg, err := json.Marshal(resErr)
-		if err != nil {
-			return
-		}
-		io.Writer.Write(w, msg)
+	if task.ID == "" {
+		slog.Error("updateTaskHandler: Не указан идентификатор")
+		writeJson(w, ResponseErr{Error: "не указан идентификатор"})
 		return
 	}
-
+	err = dbase.UpdateTask(&task)
+	if err != nil {
+		slog.Error("updateTaskHandler", "", err.Error())
+		writeJson(w, ResponseErr{Error: err.Error()})
+		return
+	}
+	writeJson(w, task)
 }
