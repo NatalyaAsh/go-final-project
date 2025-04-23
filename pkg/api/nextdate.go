@@ -20,7 +20,7 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resDate, err := NextDate(tNow, date, repeat)
 	if err != nil {
-		slog.Error(err.Error(), "func", nextDayHandler)
+		slog.Error(err.Error(), "func", "nextDayHandler")
 	}
 	msg := fmt.Sprintf("%s\n", resDate)
 	io.WriteString(w, msg)
