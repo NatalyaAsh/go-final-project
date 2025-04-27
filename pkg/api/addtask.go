@@ -25,31 +25,31 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: "ошибка передачи данных"})
+		//http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: "ошибка передачи данных"}, http.StatusBadRequest)
 		return
 	}
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"})
+		//http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"}, http.StatusBadRequest)
 		return
 	}
 
 	ok, msgErr := checkTask(&task)
 	if !ok {
-		writeJson(w, ResponseErr{Error: msgErr})
+		writeJson(w, ResponseErr{Error: msgErr}, http.StatusOK) ////////////
 		slog.Error("addTaskHandler:", "checkTask", msgErr)
 		return
 	}
 	id, err := dbase.AddTask(&task)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: err.Error()})
+		//http.Error(w, err.Error(), http.StatusBadRequest)
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusBadRequest)
 		return
 	}
 	slog.Info("", "INSERT ", task, "id", id)
-	writeJson(w, ResponseId{ID: id})
+	writeJson(w, ResponseId{ID: id}, http.StatusOK) ///////////
 }
 
 func checkTask(task *dbase.Task) (bool, string) {
@@ -84,7 +84,8 @@ func checkTask(task *dbase.Task) (bool, string) {
 	return true, ""
 }
 
-func writeJson(w http.ResponseWriter, data any) {
+func writeJson(w http.ResponseWriter, data any, statusCode int) {
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	msg, _ := json.Marshal(data)
 	io.Writer.Write(w, msg)

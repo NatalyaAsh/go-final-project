@@ -32,27 +32,26 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		slog.Error("TasksHandler:", "", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: err.Error()})
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusBadRequest)
 		return
 	}
-	writeJson(w, TasksResp{Tasks: tasks})
+	writeJson(w, TasksResp{Tasks: tasks}, http.StatusOK)
 }
 
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		slog.Error("getTaskHandler: Не указан идентификатор")
-		writeJson(w, ResponseErr{Error: "не указан идентификатор"})
+		writeJson(w, ResponseErr{Error: "не указан идентификатор"}, http.StatusOK)
 		return
 	}
 	task, err := dbase.GetTask(id)
 	if err != nil {
 		slog.Error("getTaskHandler:", "", err.Error())
-		writeJson(w, ResponseErr{Error: err.Error()})
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusOK)
 		return
 	}
-	writeJson(w, task)
+	writeJson(w, task, http.StatusOK)
 }
 
 func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,31 +60,29 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: err.Error()})
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusBadRequest)
 		return
 	}
 	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"})
+		writeJson(w, ResponseErr{Error: "ошибка десериализации JSON"}, http.StatusBadRequest)
 		return
 	}
 	ok, msgErr := checkTask(&task)
 	if !ok {
-		writeJson(w, ResponseErr{Error: msgErr})
+		writeJson(w, ResponseErr{Error: msgErr}, http.StatusOK)
 		return
 	}
 
 	if task.ID == "" {
 		slog.Error("updateTaskHandler: Не указан идентификатор")
-		writeJson(w, ResponseErr{Error: "не указан идентификатор"})
+		writeJson(w, ResponseErr{Error: "не указан идентификатор"}, http.StatusOK)
 		return
 	}
 	err = dbase.UpdateTask(&task)
 	if err != nil {
 		slog.Error("updateTaskHandler", "", err.Error())
-		writeJson(w, ResponseErr{Error: err.Error()})
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusOK)
 		return
 	}
-	writeJson(w, task)
+	writeJson(w, task, http.StatusOK)
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const LIMIT = 50
+const limit = 50
 
 func AddTask(task *Task) (int64, error) {
 	var id int64
@@ -27,15 +27,15 @@ func AddTask(task *Task) (int64, error) {
 		slog.Error("Result LastInsertId", "err", err)
 		return 0, err
 	}
-	//SelectTask()
 	return id, nil
 }
 
 func SelectTask() ([]Task, error) {
 	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler
-	ORDER BY date LIMIT :limit`, sql.Named("limit", LIMIT))
+	ORDER BY date LIMIT :limit`, sql.Named("limit", limit))
 	if err != nil {
 		slog.Error(err.Error())
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -45,16 +45,14 @@ func SelectTask() ([]Task, error) {
 		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 		if err != nil {
 			slog.Error(err.Error())
-			return []Task{}, err
+			return nil, err
 		}
-		//slog.Info("Select row:", "task", task)
 		arrTasks = append(arrTasks, task)
 	}
 	if err = rows.Err(); err != nil {
 		slog.Error(err.Error())
 		return []Task{}, err
 	}
-	//slog.Info("", "arrTasks", arrTasks)
 	return arrTasks, nil
 }
 
@@ -62,9 +60,10 @@ func GetTaskTitle(search string) ([]Task, error) {
 	searchStr := "%" + search + "%"
 	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler 
 	WHERE title LIKE :search OR comment LIKE :search ORDER BY date LIMIT :limit`,
-		sql.Named("search", searchStr), sql.Named("limit", LIMIT))
+		sql.Named("search", searchStr), sql.Named("limit", limit))
 	if err != nil {
 		slog.Error(err.Error())
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -74,25 +73,24 @@ func GetTaskTitle(search string) ([]Task, error) {
 		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 		if err != nil {
 			slog.Error(err.Error())
-			return []Task{}, err
+			return nil, err
 		}
-		//slog.Info("Select row:", "task", task)
 		arrTasks = append(arrTasks, task)
 	}
 	if err = rows.Err(); err != nil {
 		slog.Error(err.Error())
-		return []Task{}, err
+		return nil, err
 	}
-	//slog.Info("", "arrTasks", arrTasks)
 	return arrTasks, nil
 }
 
 func GetTaskDate(date time.Time) ([]Task, error) {
 	dateStr := date.Format("20060102")
 	rows, err := db.Query(`SELECT id, date, title, comment, repeat FROM scheduler
-	WHERE date=:date ORDER BY date LIMIT :limit`, sql.Named("date", dateStr), sql.Named("limit", LIMIT))
+	WHERE date=:date ORDER BY date LIMIT :limit`, sql.Named("date", dateStr), sql.Named("limit", limit))
 	if err != nil {
 		slog.Error(err.Error())
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -102,15 +100,13 @@ func GetTaskDate(date time.Time) ([]Task, error) {
 		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 		if err != nil {
 			slog.Error(err.Error())
-			return []Task{}, err
+			return nil, err
 		}
-		//slog.Info("Select row:", "task", task)
 		arrTasks = append(arrTasks, task)
 	}
 	if err = rows.Err(); err != nil {
 		slog.Error(err.Error())
-		return []Task{}, err
+		return nil, err
 	}
-	//slog.Info("", "arrTasks", arrTasks)
 	return arrTasks, nil
 }

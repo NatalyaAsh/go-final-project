@@ -1,4 +1,4 @@
-FROM golang:1.23 AS build
+FROM golang:1.23.1 AS build
 
 WORKDIR /app
 
@@ -25,7 +25,5 @@ COPY web/ ./
 WORKDIR /app
 
 COPY --from=build /app/my_app .
-
-EXPOSE 7540
 
 CMD ["/app/my_app"]

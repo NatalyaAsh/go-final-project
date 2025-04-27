@@ -2,19 +2,22 @@ package main
 
 import (
 	_ "database/sql"
+	"go1f/pkg/conf"
 	"go1f/pkg/dbase"
+	"go1f/pkg/server"
 
-	"main.go/pkg/server"
 	_ "modernc.org/sqlite"
 )
 
 func main() {
-	err := dbase.Init("scheduler.db")
+	cfg := conf.New()
+
+	err := dbase.Init(cfg)
 	if err != nil {
 		return
 	}
 	defer dbase.CloseDB()
 
-	server.Start()
+	server.Start(cfg)
 
 }

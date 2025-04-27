@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,6 +8,10 @@ import (
 	"strings"
 	"time"
 )
+
+type ResponseDate struct {
+	Date string `json:"date"`
+}
 
 func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	now := r.URL.Query().Get("now")
@@ -21,12 +24,13 @@ func nextDayHandler(w http.ResponseWriter, r *http.Request) {
 	resDate, err := NextDate(tNow, date, repeat)
 	if err != nil {
 		slog.Error(err.Error(), "func", "nextDayHandler")
+		writeJson(w, ResponseErr{Error: err.Error()}, http.StatusBadRequest)
 	}
-	msg := fmt.Sprintf("%s\n", resDate)
-	io.WriteString(w, msg)
+	io.Writer.Write(w, []byte(resDate))
 }
 
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
+	// Не получается оптимизировать, могу только вынести части кода как отдельные функции
 	if dstart == "" {
 		slog.Error("NextDate: wrong format", "date", dstart)
 		return "", nil
@@ -41,7 +45,7 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", nil
 	}
 	// Разбор repeat
-	sRepeat := strings.Split(repeat, " ")
+	sRepeat := strings.Split(strings.TrimSpace(repeat), " ")
 	if len(sRepeat) >= 1 {
 		switch sRepeat[0] {
 		// раз в год

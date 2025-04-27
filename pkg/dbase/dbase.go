@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 
+	"go1f/pkg/conf"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -28,24 +30,16 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
-func Init(dbFileDefault string) error {
-	dbFile := getEnv("TODO_DBFILE", dbFileDefault)
-	_, err := os.Stat(dbFile)
+func Init(cfg *conf.Configuration) error {
+	_, err := os.Stat(cfg.DBFile)
 
 	var install bool
 	if err != nil {
 		install = true
 	}
 
-	slog.Info("Connect to db", "dbFile", dbFile)
-	db, err = sql.Open("sqlite", dbFile)
+	slog.Info("Connect to db", "dbFile", cfg.DBFile)
+	db, err = sql.Open("sqlite", cfg.DBFile)
 	if err != nil {
 		slog.Error(err.Error())
 		return err
